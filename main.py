@@ -1,10 +1,52 @@
-from fastapi import FastAPI, HTTPException, Query
+import os
+from fastapi import FastAPI, HTTPException, Query, Depends, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from youtube_transcript_api._errors import NoTranscriptFound, VideoUnavailable
 
 app = FastAPI(title="YouTube Transcript API Wrapper")
 
 ytt_api = YouTubeTranscriptApi()
+
+# Get API token from environment
+API_TOKEN = os.getenv("API_TOKEN")
+security = HTTPBearer(auto_error=False)
+
+
+def verify_token(credentials: HTTPAuthorizationCredentials | None = Security(security)):
+    """Verify Bearer token if API_TOKEN is set in environment."""
+    if API_TOKEN is None:
+        # No token required if API_TOKEN env var is not set
+        return True
+    
+    if credentials is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing authorization token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if credentials.credentials != API_TOKEN:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid authorization token",
+        )
+    
+    return True
+
+
+@app.get("/")
+def root(_: bool = Depends(verify_token)):
+    return {
+        "name": "YouTube Transcript API Wrapper",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "transcript": "/transcript/{video_id}",
+            "docs": "/docs",
+            "redoc": "/redoc",
+        },
+    }
 
 
 @app.get("/health")
@@ -15,6 +57,7 @@ def health():
 @app.get("/transcript/{video_id}")
 def get_transcript(
     video_id: str,
+    _: bool = Depends(verify_token),
     lang: str | None = Query(
         None,
         description=(
