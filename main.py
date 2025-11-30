@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, HTTPException, Query, Depends, Security
+from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from youtube_transcript_api._errors import NoTranscriptFound, VideoUnavailable
@@ -11,6 +12,12 @@ ytt_api = YouTubeTranscriptApi()
 # Get API token from environment
 API_TOKEN = os.getenv("API_TOKEN")
 security = HTTPBearer(auto_error=False)
+
+
+class TranscriptRequest(BaseModel):
+    video_id: str
+    lang: str | None = None
+    full_text: bool = False
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials | None = Security(security)):
@@ -42,7 +49,7 @@ def root(_: bool = Depends(verify_token)):
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
-            "transcript": "/transcript/{video_id}",
+            "transcript": "/transcript",
             "docs": "/docs",
             "redoc": "/redoc",
         },
@@ -54,47 +61,33 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/transcript/{video_id}")
+@app.post("/transcript")
 def get_transcript(
-    video_id: str,
+    request: TranscriptRequest,
     _: bool = Depends(verify_token),
-    lang: str | None = Query(
-        None,
-        description=(
-            "Preferred language code (e.g. 'en'). "
-            "If not provided, YouTube defaults are used."
-        ),
-    ),
-    full_text: bool = Query(
-        False,
-        description=(
-            "If true, return a single 'text' field with the full transcript "
-            "instead of the detailed list."
-        ),
-    ),
 ):
     try:
-        if lang:
-            fetched = ytt_api.fetch(video_id, languages=[lang])
+        if request.lang:
+            fetched = ytt_api.fetch(request.video_id, languages=[request.lang])
         else:
-            fetched = ytt_api.fetch(video_id)
+            fetched = ytt_api.fetch(request.video_id)
 
         transcript = fetched.to_raw_data()
 
-        if full_text:
+        if request.full_text:
             # Join all text segments with spaces (or "\n" if you prefer lines)
             joined_text = " ".join(
                 segment["text"].strip() for segment in transcript if segment["text"]
             )
             return {
-                "video_id": video_id,
+                "video_id": request.video_id,
                 "language": fetched.language_code,
                 "text": joined_text,
             }
 
         # Default detailed format
         return {
-            "video_id": video_id,
+            "video_id": request.video_id,
             "language": fetched.language_code,
             "transcript": transcript,
         }

@@ -18,7 +18,7 @@ This wrapper uses the [youtube-transcript-api](https://github.com/jdepoix/youtub
 
 The API supports optional Bearer token authentication. If the `API_TOKEN` environment variable is set, the following endpoints require a valid Bearer token in the `Authorization` header:
 - `/` (root endpoint)
-- `/transcript/{video_id}`
+- `/transcript`
 
 The `/health` endpoint remains public for monitoring purposes.
 
@@ -34,8 +34,10 @@ curl -H "Authorization: Bearer your-secret-token-here" \
   "http://localhost:8000/"
 
 # Transcript endpoint
-curl -H "Authorization: Bearer your-secret-token-here" \
-  "http://localhost:8000/transcript/dQw4w9WgXcQ"
+curl -X POST -H "Authorization: Bearer your-secret-token-here" \
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "dQw4w9WgXcQ"}' \
+  "http://localhost:8000/transcript"
 ```
 
 If `API_TOKEN` is not set, the API works without authentication (public access).
@@ -120,27 +122,38 @@ Returns the service status. This endpoint is always public (no authentication re
 ### Get Transcript
 
 ```bash
-GET /transcript/{video_id}?lang=en&full_text=false
+POST /transcript
 ```
 
 Fetches the transcript for a YouTube video.
 
-**Path Parameters:**
-- `video_id` (required): YouTube video ID (e.g., `dQw4w9WgXcQ`)
+**Request Body:**
+```json
+{
+  "video_id": "dQw4w9WgXcQ",
+  "lang": "en",
+  "full_text": false
+}
+```
 
-**Query Parameters:**
+**Request Parameters:**
+- `video_id` (required): YouTube video ID (e.g., `dQw4w9WgXcQ`)
 - `lang` (optional): Language code (e.g., `en`, `es`, `fr`). If not provided, YouTube defaults are used.
 - `full_text` (optional): If `true`, returns a single `text` field with the full transcript. Default: `false`
 
 **Example Request (without authentication):**
 ```bash
-curl "http://localhost:8000/transcript/dQw4w9WgXcQ?lang=en&full_text=false"
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"video_id": "dQw4w9WgXcQ", "lang": "en", "full_text": false}' \
+  "http://localhost:8000/transcript"
 ```
 
 **Example Request (with authentication):**
 ```bash
-curl -H "Authorization: Bearer your-api-token" \
-  "http://localhost:8000/transcript/dQw4w9WgXcQ?lang=en&full_text=false"
+curl -X POST -H "Authorization: Bearer your-api-token" \
+  -H "Content-Type: application/json" \
+  -d '{"video_id": "dQw4w9WgXcQ", "lang": "en", "full_text": false}' \
+  "http://localhost:8000/transcript"
 ```
 
 **Response (detailed format):**
