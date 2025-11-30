@@ -2,6 +2,8 @@
 
 A FastAPI-based REST API wrapper for fetching YouTube video transcripts. This service provides a simple HTTP interface to retrieve transcripts from YouTube videos.
 
+This wrapper uses the [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) Python library by [jdepoix](https://github.com/jdepoix) to fetch transcripts from YouTube videos.
+
 ## Features
 
 - 🎥 Fetch YouTube video transcripts via REST API
@@ -201,7 +203,11 @@ docker run -p 8000:8000 -e API_TOKEN=your-secret-token yt-transcript-api
 - Python 3.11+
 - FastAPI
 - uvicorn
-- youtube-transcript-api
+- [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api)
+
+## Credits
+
+This project is a REST API wrapper around the [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) library by [jdepoix](https://github.com/jdepoix). The core functionality for fetching YouTube transcripts is provided by that library.
 
 ## License
 
