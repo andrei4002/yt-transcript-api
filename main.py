@@ -12,9 +12,9 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/transcript")
+@app.get("/transcript/{video_id}")
 def get_transcript(
-    video_id: str = Query(..., description="YouTube video ID"),
+    video_id: str,
     lang: str | None = Query(
         None,
         description=(
